@@ -59,13 +59,100 @@ La aplicación está desplegada en una instancia de **OCI Compute** (Ubuntu) y e
 
 **[http://137.131.137.121:8501](http://137.131.137.121:8501)**
 
-Para levantar la aplicación en el servidor:
+### Requisitos previos en OCI
+
+1. Instancia **Compute** con Ubuntu en estado **Running**.
+2. Regla de **Ingress** en Security List / NSG: TCP puerto **8501** desde `0.0.0.0/0`.
+3. Clave **API de Gemini** configurada como variable de entorno (no subir al repositorio).
+
+### Pasos de despliegue en el servidor
+
+**1. Conectarse por SSH desde tu máquina local:**
 
 ```bash
+ssh ubuntu@137.131.137.121
+```
+
+**2. Clonar el repositorio:**
+
+```bash
+git clone https://github.com/TU_USUARIO/final-challenge-alura-agente.git
+cd final-challenge-alura-agente
+```
+
+**3. Crear y activar el entorno virtual:**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+**4. Instalar dependencias:**
+
+```bash
+pip install -r requirements.txt
+```
+
+**5. Colocar el PDF del challenge** en la raíz del proyecto:
+
+`Arquitectura de Microservicios y Mapa de Dominios — Santo Pegasus Soluciones.pdf`
+
+**6. Configurar la API Key de Gemini** (solo en el servidor, nunca en Git):
+
+```bash
+export GOOGLE_API_KEY="tu_clave_aqui"
+```
+
+Para que persista al cerrar sesión, puedes agregarla al final de `~/.bashrc`:
+
+```bash
+echo 'export GOOGLE_API_KEY="tu_clave_aqui"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**7. Levantar la aplicación en segundo plano** (persiste al cerrar SSH):
+
+```bash
+nohup streamlit run app.py --server.port 8501 --server.address 0.0.0.0 > streamlit.log 2>&1 &
+```
+
+**8. Verificar que está corriendo:**
+
+```bash
+ps aux | grep streamlit
+tail -f streamlit.log
+```
+
+### Alternativa con tmux
+
+Si prefieres ver los logs en vivo y desacoplarte de la sesión:
+
+```bash
+tmux new -s streamlit
+source venv/bin/activate
 streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 ```
 
-Recuerda configurar las reglas de **Security List / Network Security Group** para permitir tráfico entrante en el puerto 8501.
+Desacoplarse sin detener la app: `Ctrl+B`, luego `D`.  
+Volver a la sesión: `tmux attach -t streamlit`
+
+### Mantener la app disponible
+
+- La aplicación debe seguir ejecutándose en el servidor OCI (con `nohup` o `tmux`).
+- La instancia Compute debe permanecer en estado **Running** en la consola de OCI.
+- Cerrar tu notebook o la terminal local **no apaga** el servidor, siempre que Streamlit se haya lanzado en background.
+
+### Actualizar el despliegue
+
+Si haces cambios en el código:
+
+```bash
+cd ~/final-challenge-alura-agente
+git pull
+source venv/bin/activate
+pkill -f "streamlit run app.py"
+nohup streamlit run app.py --server.port 8501 --server.address 0.0.0.0 > streamlit.log 2>&1 &
+```
 
 ## Ejemplos de Prueba
 
